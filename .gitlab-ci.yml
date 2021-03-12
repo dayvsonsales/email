@@ -1,0 +1,57 @@
+before_script:
+  - echo "Starting build, test and deploys in testing and prod environment."
+
+image: node:14.15.4-slim
+
+cache:
+  paths:
+    - node_modules/
+
+stages:
+  - build
+  - test
+  - deploy
+
+build:
+  stage: build
+  script:
+    - npm install
+    - npm run build
+  artifacts:
+    paths:
+      - node_modules/
+  only:
+    - merge_requests
+    - pushes
+
+test:
+  stage: test
+  script:
+    - npm test
+  only:
+    - merge_requests
+    - pushes
+
+deploy_qa:
+  stage: deploy
+  image: ruby:latest
+  script:
+    - apt-get update -qy
+    - apt-get install -y ruby-dev
+    - gem install dpl
+    - dpl --provider=heroku --app=$HEROKU_APP_QA --api-key=$HEROKU_API_KEY
+  only:
+    - qa
+  environment:
+    name: qa
+
+deploy_prod:
+  stage: deploy
+  script: ??
+  only:
+    - master
+  environment:
+    name: prod
+
+after_script:
+  - echo "Validation and deployment process completed."
